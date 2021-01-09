@@ -1,7 +1,7 @@
 #include <stdio.h>
 
 /*
-*線形探索法
+*線形探索法（linear search）
 */
 
 struct 
