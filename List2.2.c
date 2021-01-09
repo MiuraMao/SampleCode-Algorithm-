@@ -27,9 +27,3 @@ int main(int key)
     }
     return -1;                              //見つからなかった
 }
-
-// int main(void)
-// {
-//     int key;
-//     binary_search(key);
-// }
