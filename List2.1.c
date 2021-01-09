@@ -11,7 +11,7 @@ struct
 }table[100];
 
 int n;      /*tableに登録されているデータの個数*/
-int serch(int key)
+int main(int key)
 {
     int i;
     
