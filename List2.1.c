@@ -1,5 +1,9 @@
 #include <stdio.h>
 
+/*
+*線形探索法
+*/
+
 struct 
 {
     int key;
