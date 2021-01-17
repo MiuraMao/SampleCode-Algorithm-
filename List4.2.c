@@ -10,7 +10,7 @@ typedef long    ELEM;           //待ち行列の要素の型
 
 # define QUEUE_SIZE 100         //待ち行列の大きさ
 
-ELEM    queue [QUEUE_SIZE];     //待ち行列の手k魏
+ELEM    queue [QUEUE_SIZE];     //待ち行列の定義
 int     front;                  //待ち行列の先頭
 int     rear;                   //待ち行列の末尾（正確に言うと末尾の次の要素を指す）
 
