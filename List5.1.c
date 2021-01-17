@@ -1,5 +1,6 @@
 #include <stdio.h>
 /*連結リストへの挿入*/
+
 struct CELL{
     struct CELL *next;
 };
