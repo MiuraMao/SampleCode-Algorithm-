@@ -30,5 +30,6 @@ int main(void){
     a = 5;
     //～
     insert(a);
+    //～
 return 0;
 }
