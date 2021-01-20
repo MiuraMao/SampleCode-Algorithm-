@@ -10,6 +10,7 @@ int main (void){
 /*ループの末尾で終了条件を判定*/
 struct CELL *ptr, *p;
 
+//for (p = ptr; p != NULL; p->next)とまとめることができる
 if (ptr != NULL)
     p = ptr;
     do {
