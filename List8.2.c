@@ -31,8 +31,8 @@ DATA *find(KEY key)
 {
     CELL *p;
 
-    for (p = table[hash(key)]; p != NULL; p = p->next)
-        if (keyequal(key, p->key))
+    for (p = table[hash(key)]; p != NULL; p = p->next)      //hashは別途実装
+        if (keyequal(key, p->key))      //keyequalは別途実装
             return &p->data;
     return NULL;
 }
