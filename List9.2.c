@@ -29,6 +29,6 @@ NODE *insert(KEY key)
     new->left = NULL;
     new->right = NULL;
     new->data = key;
-    *p = new;
+    *p = new;                           //正しい場所に挿入する
     return new;
 }
