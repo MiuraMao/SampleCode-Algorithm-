@@ -29,7 +29,7 @@ int delete(KEY key)
                 (*p)->right = x->right;
                 (*p)->left = x->left;
             }
-            free(x);
+            free(x);                            //削除された要素へのポインタの解放
             return 1;
         }else if (keylt(key, (*p)->data))       //親の方が大きい
             p = &(*p)->left;
