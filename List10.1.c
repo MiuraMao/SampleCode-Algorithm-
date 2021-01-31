@@ -44,7 +44,7 @@ typedef struct node{
 
 NODE    *root   = NULL;
 
-error(char *s)
+int error(char *s)
 {
     fprintf(stderr, s);
     exit(1);
@@ -205,7 +205,7 @@ NODE    *insert_aux(NODE **pnode, KEY key, NODE **newnode, KEY *lowest)
                 /*0～HALF_CHILD-2番目の部分木の間の適切な位置に、節xnodeを挿入する*/
                 for (i = HALF_CHILD-2; i > pos; i--){
                     node->child[i+1] = node->child[i];
-                    node->child[i+1] = node->low[i];
+                    node->low[i+1] = node->low[i];
                 }
                 node->child[pos+1] = xnode;
                 node->low  [pos+1] = xlow;     
@@ -435,7 +435,7 @@ int     delete(KEY key)
 /*
 * printtree -- B木の内容をプリントする（デバッグ用） 
 */
-printtree(NODE *p)
+int printtree(NODE *p)
 {
     int i;
 
@@ -461,7 +461,7 @@ printtree(NODE *p)
 *           -n：nを削除する
 *           n：nを探索する
 */
-main()
+int main()
 {
 /*  static    int     data[] = { 10, 20 30, 40, 50 };*/
     static    int     data[] = { 13, 5, 2, 7, 6, 21, 15 };
