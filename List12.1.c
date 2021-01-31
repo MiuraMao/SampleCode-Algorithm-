@@ -1,5 +1,6 @@
 #include <stdio.h>
 /*バブルソート*/
+//安定な整列アルゴリズムである
 
 void bubble_sort(int a[],  int n)
 {

@@ -1,5 +1,6 @@
 #include <stdio.h>
 /*選択ソート*/
+//安定な整列アルゴリズムではない
 
 void selection_sort(int a[], int n)
 {
