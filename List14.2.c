@@ -1,8 +1,6 @@
 #include <stdio.h>
-/*再帰版クイックソート*/
-//安定な整列アルゴリズムでない
+/*非再帰版クイックソート*/
 
-/*配列a[l]~a[r]を分割する。枢軸の添え字を返す*/
 int partition(int a[], int l, int r)
 {
     int i, j, pivot, t;
@@ -31,29 +29,45 @@ int partition(int a[], int l, int r)
     return i;
 }
 
-/*実際にクイックソートを行う関数*/
-void quick_sort_1(int a[], int l, int r)
+/*配列aをクイックソートする*/
+void quick_sort_2(int a[], int n)
 {
-    int v;
+    int l, r, v;
+    int low[30], high[30];
+    int sp;
 
-    //printf("%d...%d", l, r);
+    /*スタックを初期化する*/
+    low[0] = 0;
+    high[0]= n - 1;
+    sp = 1;
 
-    /*整列する要素が１つなら、何もしないでリターンする*/
-    if (l > r)
-        return;
-    
-    /*枢軸vを基準に分割する*/
-    v = partition(a, l, r);
+    /*スタックが空になるまで繰り返す*/
+    while (sp > 0){
 
-    /*左の部分配列a[l]~a[v-1]を整列する*/
-    quick_sort_1(a, l, v-1);
+        /*スタックから、整列する範囲を取り出す*/
+        sp--;
+        l = low[sp];
+        r = high[sp];
 
-    /*右の部分配列a[v+1]~a[r]を整列する*/
-    quick_sort_1(a, v+1, r);
+        //printf("%d...%d", l, r);
+
+        /*整列要素が１つなら、何もしない（再びwhile文を実行する）*/
+        if (l >= r)
+            ;
+        else{
+            /*枢軸vを基準に分割する*/
+            v = partition(a, l, r);
+
+            /*左、右の順番で部分配列を整列する（スタックなので、「右左」の順に積むことに注意）*/
+            low[sp] = v + 1;
+            high[sp++] = r;
+            low[sp] = l;
+            high[sp++] = v - 1;     
+        }
+    }
 }
 
-/*クイックソート*/
 void main(int a[], int n)
 {
-    quick_sort_1(a, 0, n - 1);
+    quick_sort_2(a, n);
 }
