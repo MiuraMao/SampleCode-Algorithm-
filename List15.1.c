@@ -35,7 +35,7 @@ void merge_sort_array(int a[], int low, int high)
     
     /*作業用配列bの両端から取り出したデータをマージして配列aに入れる*/
     i = low; j = high;
-    for (k = low; k <= high; k++)
+    for (k = low; k <= high; k++)       //最大の要素が番兵となり、ポインタi、jが反対側に突き出るのを防ぐ
         if (b[i] <= b[j])
             a[k] = b[i++];
         else
