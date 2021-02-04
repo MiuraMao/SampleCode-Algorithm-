@@ -1,5 +1,6 @@
 #include <stdio.h>
 /*非再帰版クイックソート（完成版）*/
+//定数係数が大きいため、要素数が１０程度なら挿入ソートを利用した方が良い
 
 int partition(int a[], int l, int r)
 {
