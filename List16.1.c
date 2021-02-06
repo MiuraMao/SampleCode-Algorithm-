@@ -2,7 +2,6 @@
 /*探索木を利用した整列アルゴリズムのスケッチ*/
 //平衡木ではinsertとdelete_minをO(log n)で実行できる
 
-
 sort (int a[], int n)
 {
     int i;
