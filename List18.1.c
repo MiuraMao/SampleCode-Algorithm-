@@ -1,9 +1,9 @@
 /*力まかせのアルゴリズムによる文字列探索*/
-/*Brute-forse Algprithm*/
+/*Brute-force Algprithm*/
 
 /*長さtext_lenの文字列textから長さpat_lenの文字列patternを探索する（力まかせ法）*/
 
-int brute_forse_search(char *text, int text_len, char *pattern, int pat_len)
+int brute_force_search(char *text, int text_len, char *pattern, int pat_len)
 {
     /*変数iは注目しているテキストの位置、変数jは注目しているパターンの位置を表すポインタ*/
     int i, j;
