@@ -1,5 +1,5 @@
 /*力まかせのアルゴリズムによる文字列探索*/
-/*Brute-force Algprithm*/
+/*Brute-force Algorithm*/
 
 /*長さtext_lenの文字列textから長さpat_lenの文字列patternを探索する（力まかせ法）*/
 
