@@ -1,3 +1,4 @@
+#include <stdio.h>
 /*力まかせのアルゴリズムによる文字列探索*/
 /*Brute-force Algorithm*/
 
