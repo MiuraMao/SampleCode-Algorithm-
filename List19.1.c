@@ -218,6 +218,106 @@ tree_t *primary()
     return x;
 }
 
+//条件付きコンパイル
+#if     DEBUG
+/*構文木を表示する（デバッグ用）*/
+void dump_tree(tree_t *p)
+{
+    switch (p->op){
+    case op_char : 
+        printf("\"%c\"", p->u.c);
+        break;
+    case op_concat :
+        printf("(concat ");
+        dump_tree(p->u.x._right);
+        printf(" ");
+        dump_tree(p->u.x._right);
+        printf(")");
+        break; 
+    case op_union :
+        printf("(or ");
+        dump_tree(p->u.x._left);
+        printf(" ");
+        dump_tree(p->u.x._right);
+        printf(")");
+        break;
+    case op_closure :
+        printf("(closure ");
+        dump_tree(p->u.x._left);
+        printf(")");
+        break;
+    case op_empty :
+        printf("EMPTY");
+        break;
+    default :
+        fprintf(stderr, "This cannot happen in <dump_tree>\n");
+        exit(2);
+    }
+}
+#endif     /*DEBUG*/
 
+/*正規表現をパースして、正規表現に対応する構文木を返す。strは正規表現が入っている文字列*/
+tree_t *parse_regexp(char *str)
+{
+    tree_t *t;
 
+    /*パーサを初期化する*/
+    initialize_regexp_parser(str);
+
+    /*正規表現をパースする*/
+    t = regexp();
+
+    /*次のトークンがtk_endでなければエラー*/
+    if (current_token != tk_end)
+        syntax_error("Extra character at end of patten");
+
+#if     DEBUG
+    /*得られた構文木の内容を表示する*/
+    dump_tree(t);
+    printf("\n");
+#endif      /*DEBUG*/
+
+    /*生成した構文木を返す*/
+    return t;
+}
+
+/*******************************************
+ 　 構文木からNFAを生成する
+*******************************************/
+
+/*EMPTYはε遷移を表す*/
+#define EMPTY   -1
+
+/*nlist_tはNFAにおける遷移を表す型。文字cによって状態toへと遷移する*/
+typedef struct nlist {
+    char c;
+    int to;
+    struct nlist    *next       /*次データへのポインタ*/
+} nlist_t;
+
+/*NFAの状態数の上限*/
+#define NFA_STATE_MAX   128
+
+/*NFAの状態遷移表*/
+nlist_t *nfa[NFA_STATE_MAX];
+
+/*NFAの初期状態*/
+int nfa_entry;
+
+/*NFAの終了状態*/
+int nfa_exit;
+
+/*NFAの状態数*/
+int nfa_nstate = 0;
+
+/*ノードに番号を割り当てる*/
+int gen_node()
+{
+    /*NFAの状態数の上限をチェックする*/
+    if (nfa_nstate >= NFA_STATE_MAX){
+        fprintf(stderr, "Too many NFA state.\n");
+        exit(2);
+    }
+    return nfa_nstate++;
+}
 
