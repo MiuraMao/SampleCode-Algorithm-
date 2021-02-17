@@ -111,4 +111,113 @@ token_t get_token()
     return current_token;
 }
 
+/*正規表現を解析するパーサを初期化する*/
+void initialize_regexp_parser(char *str)
+{
+    strbuff = str;
+    get_token();
+}
+
+/*構文木のノードを作成する。opはノードが表す演算、leftは左の子、rightは右の子*/
+tree_t *make_tree_node(op_t op, tree_t *left, tree_t *right)
+{
+    tree_t  *p;
+
+    /*ノードを割り当てる*/
+    p = (tree_t *)alloc_mem(sizeof(tree_t));    //構造体ポインタ
+
+    /*ノードに情報を設定する*/
+    p->op = op;
+    p->u.x._left = left;
+    p->u.x._right = right;
+    return p;
+}
+
+/*構文木の葉を作る。cはこの葉が表す文字*/
+tree_t  *make_atom(char c)
+{
+    tree_t  *p;
+
+    /*葉を割り当てる*/
+    p = (tree_t *)alloc_mem(sizeof(tree_t));
+
+    /*葉に情報を設定する*/
+    p->op = op_char;    //文字そのもの
+    p->u.c = c;
+    return p;
+}
+
+//typedef
+tree_t  *regexp(), *term(), *factor(), *primary();
+
+/*<regexp>をパースして、得られた構文木を返す。選択X|Yを解析する*/
+tree_t *regexp()
+{
+    tree_t  *x;
+
+    x = term();
+    while (current_token == tk_union){
+        get_token();
+        x = make_tree_node(op_union, x, term());
+    }
+    return x;
+}
+
+/*<term>をパースして、得られた構文木を返す。連結XYを解析する*/
+tree_t *term()
+{
+    tree_t  *x;
+    if (current_token == tk_union || 
+        current_token == tk_rpar ||
+        current_token == tk_end)
+        x = make_tree_node(op_empty, NULL, NULL);
+    else{
+        x = factor();
+        while (current_token != tk_union &&
+               current_token !=  tk_rpar &&
+               current_token != tk_end){
+                   x = make_tree_node(op_concat, x, factor());
+        }
+    }
+    return x;
+}
+
+/*<factor>をパースして、得られた構文木を返す。繰り返しX*、X+を解析する*/
+tree_t *factor()
+{
+    tree_t  *x;
+
+    x = primary();
+    if (current_token == tk_star){
+        x = make_tree_node(op_closure, x, NULL);
+        get_token();
+    }else if (current_token == tk_plus){
+        x = make_tree_node(op_concat, x, make_tree_node(op_closure, x, NULL));  //再帰
+        get_token();
+    }
+    return x;
+}
+
+/*<primary>をパースして、得られた構文木を返す。文字そのもの、(X)を解析する*/
+tree_t *primary()
+{
+    tree_t *x;
+
+    if(current_token == tk_char){
+        x = make_atom(token_char);      //葉を作る
+        get_token();
+    }else if (current_token == tk_lpar){
+        get_token();
+        x = regexp();
+        if (current_token != tk_rpar)
+            syntax_error("Close paren is expected.");
+        get_token();
+    }else {
+        syntax_error("Normal character or open paren is expected.");
+    }
+    return x;
+}
+
+
+
 
