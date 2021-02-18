@@ -25,7 +25,7 @@ void *alloc_mem(int size)
         fprintf(stderr, "Out of memory.\n");
         exit(2);
     }
-    memset(p, 0, size);
+    memset(p, 0, size);     //nバイト分のメモリブロックをセット
     return p;
 }
 
@@ -320,4 +320,102 @@ int gen_node()
     }
     return nfa_nstate++;
 }
+
+/*NFAに状態遷移を追加する。状態fromに対して、文字cのときに状態toへの遷移を追加する*/
+void add_transition(int from, int to, char c)
+{
+    nlist_t *p;
+
+    p = (nlist_t *)alloc_mem(sizeof(nlist_t));
+    p->c = c;
+    p->to = to;
+    p->next = nfa[from];
+    nfa[from] = p;
+}
+
+/*構文木treeに対するNFAを生成する。NFAの入口をentry、出口をway_outとする*/
+void gen_nfa(tree_t *tree, int entry, int way_out)
+{
+    int a1, a2;
+
+    switch (tree->op) {
+    case op_char :
+        add_transition(entry, way_out, tree->u.c);
+        break;
+    case op_empty :
+        add_transition(entry, way_out, EMPTY);
+        break;
+    case op_union :
+        gen_nfa(tree->u.x._left, entry, way_out);
+        gen_nfa(tree->u.x._right, entry, way_out);
+        break;
+    case op_closure :
+        a1 = gen_node();
+        a2 = gen_node();
+        add_transition(entry, a1, EMPTY);
+        gen_nfa(tree->u.x._left, a1, a2);
+        add_transition(a2, a1, EMPTY);
+        add_transition(a1, way_out, EMPTY);
+        break;
+    case op_concat :
+        a1 = gen_node();
+        gen_nfa(tree->u.x._left, entry, a1);
+        gen_nfa(tree->u.x._right, a1, way_out);
+        break;
+    default : 
+        fprintf(stderr, "This cannot happen in <gen_nfa>\n");
+        exit(2);
+    }
+}
+
+/*構文木treeに対応するNFAを生成する*/
+void build_nfa(tree_t *tree)
+{
+    /*NFAの初期状態のノードを割り当てる*/
+    nfa_entry = gen_node();
+
+    /*NFAの終了状態のノードを割り当てる*/
+    nfa_exit = gen_node();
+
+    /*NFAを生成する*/
+    gen_nfa(tree, nfa_entry, nfa_exit);
+}
+
+#if     DEBUG
+/*NFAを表示する（デバッグ用）*/
+void dump_nfa()
+{
+    int i;
+    nlist_t *p;
+
+    for (i = 0; i < NFA_STATE_MAX; i++) {
+        if (nfa[i] != NULL){
+            printf("state %3d：", i);
+            for (p = nfa[i]; p != NULL; p = p->next) {
+                printf("（%c . %d）", p->c == EMPTY ? '?' : p->c, p->to);
+            }
+            printf("\n");
+        }
+    }
+}
+#endif  /*DEBUG*/
+
+/*******************************************
+ 　 NFAをDFAへ変換する
+*******************************************/
+
+/*NFA状態集合に必要なバイト数*/
+#define NFA_VECTOR_SIZE (NFA_STATE_MAX / 8)
+
+/*N_state_set_tは、NFA状態集合を表す型。実際にはビットベクトルで表現されている*/
+typedef struct {
+    unsigned char vec[NFA_VECTOR_SIZE];
+}N_state_set_t;
+
+/*NFA集合状態stateに状態sが含まれているか？*/
+#define check_N_state(state, s) ((state)->vec[(s)/8] & (1 << ((s)%8)))
+
+
+
+
 
