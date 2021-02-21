@@ -412,8 +412,144 @@ typedef struct {
     unsigned char vec[NFA_VECTOR_SIZE];
 }N_state_set_t;
 
-/*NFA集合状態stateに状態sが含まれているか？*/
+/*NFA状態集合stateに状態sが含まれているか？*/
 #define check_N_state(state, s) ((state)->vec[(s)/8] & (1 << ((s)%8)))
+
+/*dlist_tは遷移可能なNFA状態のリストを表す型。（関数compute_reachable_N_stateがこの型の値を返す）
+　文字cによってNFA状態toへ遷移する*/
+typedef struct dlist{
+        char c;
+        N_state_set_t   to;
+        struct dlist    *next;      /*次のデータへのポインタ*/
+}dlist_t;
+
+/*DFAの状態数の上限*/
+#define DFA_STATE_MAX 100
+
+/*dslist_tは遷移先のリストを表す型。文字cによって状態toへ遷移する*/
+typedef struct dslist{
+    char c;
+    struct D_state_t    *to;
+    struct dslist       *next;      /*次データへのポインタ*/
+}dslist_t;
+
+/*D_state_tはDFA状態を表す型*/
+typedef struct D_state_t{
+    N_state_set_t       *state;     /*このDFA状態が表すNFA状態集合*/
+    int                 visited;    /*処理済みなら1*/
+    int                 accepted;   /*終了状態を含むなら1*/
+    dslist_t            *next;      /*遷移先のリスト*/
+}D_state_t;
+
+/*DFAの状態遷移表*/
+D_state_t dfa[DFA_STATE_MAX];
+
+/*DFAの初期状態*/
+D_state_t *initial_dfa_state;
+
+/*現時点でのDFAの状態数*/
+int dfa_nstate = 0;
+
+#if     DEBUG
+/*NFA状態集合を表示する（デバッグ用）*/
+void debug_N_state_set(N_state_set_t *p)
+{
+    int i;
+
+    for (i = 0; i < nfa_nstate; i++){
+        if (check_N_state(p, i))
+            printf("%d", i);
+    }
+}
+
+/*DFAを表示する（デバッグ用）*/
+void dump_dfa()
+{
+    dslist_t *l;
+    int i;
+
+    for(i = 0; i < dfa_nstate; i++){
+        printf("%2d%c：", i, dfa[i].accepted ? 'A' : ' ');
+        for (l = dfa[i].next; l != NULL; l = l->next)
+            printf("%c=>%d ", l->c, l->to - dfa);
+        printf("\n");
+    }
+    for (i = 0; i < dfa_nstate; i++){
+        printf("state %2d%c = {", i, dfa[i].accepted ? 'A' : ' ');
+        dump_N_state_set(dfa[i].state);
+        printf("}\n");
+    }
+}
+#endif      /*DEBUG*/
+
+/*NFA状態集合stateにNFA状態sを追加する*/
+void add_N_state(N_state_set_t *state, int s)
+{
+    state->vec[s/8] |= (1 << (s%8));    //左辺に左辺|右辺の結果を代入する
+}
+
+/*NFA状態集合stateにNFA状態sを追加する。同時にNFA状態sからε遷移で移動できるNFA状態も追加する*/
+void mark_empty_transition(N_state_set_t *state, int s)
+{
+    nlist_t     *p;
+
+    add_N_state(state, s);
+    for (p = nfa[s]; p != NULL; p = p->next){
+        if (p->c == EMPTY && !check_N_state(state, p->to))
+            mark_empty_transition(state, p->to);
+    }
+}
+
+/*NFA状態集合のstateに対してε-closure操作を実行する。ε遷移で遷移可能なすべてのNFA状態を追加する*/
+void collect_empty_transition(N_state_set_t *state)
+{
+    int i;
+
+    for (i = 0; i < nfa_nstate; i++){
+        if(check_N_state(state, i))
+            mark_empty_transition(state, i);
+    }
+}
+
+/*2つのNFA状態集合aとbが等しいか調べる。等しければ１、等しくなければ２を返す*/
+int equal_N_state_set(N_state_set_t *a, N_state_set_t *b)
+{
+    int i;
+
+    for (i = 0; i < NFA_VECTOR_SIZE; i++){
+        if (a->vec[i] != b->vec[i])
+            return 0;
+    }
+    return 1;
+}
+
+
+/*NFA状態集合sをDFAに登録して、DFA状態へのポインタを返す。sが終了状態を含んでいれば、acceptedフラグをセットする*/
+D_state_t *register_D_state(N_state_set_t *s)
+{
+    int i;
+
+    /*NFA状態sがすでにDFAに登録されていたら、何もしないでリターンする*/
+    for (i = 0; i < nfa_nstate; i++){
+        if (equal_N_state_set(dfa[i].state, s))
+            return &dfa[i];
+    }
+
+    /*DFA状態数が多すぎないかチェック*/
+    if (dfa_nstate >= DFA_STATE_MAX){
+        fprintf(stderr, "Too many DFA state.\n");
+        exit(2);
+    }
+
+    /*DFAに必要な情報をセットする*/
+    dfa[dfa_nstate].state = s;
+    dfa[dfa_nstate].visited = 0;
+    dfa[dfa_nstate].accepted = check_N_state(s, nfa_exit) ? 1 : 0;
+    dfa[dfa_nstate].next = NULL;
+    return &dfa[dfa_nstate++];
+}
+
+
 
 
 
