@@ -549,7 +549,105 @@ D_state_t *register_D_state(N_state_set_t *s)
     return &dfa[dfa_nstate++];
 }
 
+/*処理済みの印がついていないDFA状態を探す。見つからなければNULLを返す*/
+D_state_t　*fetch_unvisited_D_state()
+{
+    int i;
 
+    for (i = 0; i < dfa_nstate; i++){
+        if (dfa[i].visited == 0)
+            return &dfa[i];
+    }
+    return NULL;
+}
+
+/*DFA状態dstateから遷移可能なNFA状態を探して、リストにして返す*/
+dlist_t *compute_reachable_N_state(D_state_t *D_state_t)
+{
+    int i;
+    nlist_t *p;
+    dlist_t *p;
+    dlist_t *result, *a, *b;
+    N_state_set_t *state;
+
+    state = dstate->state;
+    result = NULL;
+
+    /*すべてのNFA状態を順に並べる*/
+    for (i = 0; i < nfa_nstate; i++){
+
+        /*NFA状態iがDFA状態dstateに含まれていれば、以下の処理を行う*/
+        if (check_N_state(state, i)){
+
+            /*NFA状態iから遷移可能なNFA状態をすべて調べてリストにする*/
+            for (p = nfa[i]; p != NULL; p = p->next){
+                if (p->c != EMPTY){  /*ただし、ε遷移は除外する*/
+                    for ( a = result; a != NULL; a = a->next){
+                        if (a->c == p->c){
+                            add_N_state(&a->to, p->to);
+                            goto added;
+                        }
+                    }
+                    b = alloc_mem(sizeof(dlist_t));
+                    b->c = p->c;
+                    add_N_state(&b->to, p->to);
+                    b->next = result;
+                    result = b;
+                added:
+                    ;
+                }
+            }
+        }
+    }
+
+    /*作成したリストを返す*/
+    return result;
+}
+
+/*NFAを等価なDFAへと変換する*/
+void convert_nfa_to_dfa()
+{
+    N_state_set_t   *initial_state;
+    D_state_t       *t;
+    dlist_t         *x;
+    dslist_t        *p;
+
+    /*DFAの初期状態を登録する*/
+    initial_state = alloc_mem(sizeof(N_state_set_t));
+    add_N_state(initial_state, nfa_entry); 
+    collect_empty_transition(initial_state);
+    initial_dfa_state = register_D_state(initial_state);
+
+    /*未処理のDFA状態があれば、それを取り出して処理する。（注目しているDFA状態をtとする）*/
+    while ((t = fetch_unvisited_D_state()) != NULL){
+
+        /*処理済みの印をつける*/
+        t->visited = 1;
+
+        /*状態tから遷移可能なDFA状態をすべてDFAに登録する。xは（文字、NFA状態集合）の対になっている*/
+        for (x = compute_reachable_N_state(t); x != NULL; x = x->next){
+
+            /*NFA状態集合のε-closureを求める*/
+            collect_empty_transition(&x->to);
+            p = alloc_mem(sizeof(dslist_t));
+            p->c = x->c;
+
+            /*NFA状態集合をDFAに登録する*/
+            p->to = register_D_state(&x->to);
+            p->next = t->next;
+            t->next = p;
+        }
+    }
+    #if     DEBUG
+        printf("---DFA-----\n");
+    #endif  /*DEBUG*/
+
+    
+}
+
+/*******************************************
+   DFAを使ってパターンマッチを行う
+*******************************************/
 
 
 
