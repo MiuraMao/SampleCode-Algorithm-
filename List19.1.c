@@ -1,4 +1,5 @@
 /*正規表現のパターンマッチ*/
+// 「regexp 正規表現」として起動する
 
 /*
     DFAによる正規表現のパターンマッチ
@@ -292,7 +293,7 @@ tree_t *parse_regexp(char *str)
 typedef struct nlist {
     char c;
     int to;
-    struct nlist    *next       /*次データへのポインタ*/
+    struct nlist    *next;       /*次データへのポインタ*/
 } nlist_t;
 
 /*NFAの状態数の上限*/
@@ -452,7 +453,7 @@ int dfa_nstate = 0;
 
 #if     DEBUG
 /*NFA状態集合を表示する（デバッグ用）*/
-void debug_N_state_set(N_state_set_t *p)
+void dump_N_state_set(N_state_set_t *p)
 {
     int i;
 
@@ -550,7 +551,7 @@ D_state_t *register_D_state(N_state_set_t *s)
 }
 
 /*処理済みの印がついていないDFA状態を探す。見つからなければNULLを返す*/
-D_state_t　*fetch_unvisited_D_state()
+D_state_t *fetch_unvisited_D_state()
 {
     int i;
 
@@ -562,11 +563,10 @@ D_state_t　*fetch_unvisited_D_state()
 }
 
 /*DFA状態dstateから遷移可能なNFA状態を探して、リストにして返す*/
-dlist_t *compute_reachable_N_state(D_state_t *D_state_t)
+dlist_t *compute_reachable_N_state(D_state_t *dstate)
 {
     int i;
     nlist_t *p;
-    dlist_t *p;
     dlist_t *result, *a, *b;
     N_state_set_t *state;
 
@@ -641,15 +641,120 @@ void convert_nfa_to_dfa()
     #if     DEBUG
         printf("---DFA-----\n");
     #endif  /*DEBUG*/
-
-    
 }
 
 /*******************************************
    DFAを使ってパターンマッチを行う
 *******************************************/
 
+/*状態stateから文字cによって遷移して、遷移後の状態を返す。文字cによって遷移できなければNULLを返す*/
+D_state_t *next_dfa_state(D_state_t *state, char c)
+{
+    dslist_t *p;
+
+    for (p = state->next; p != NULL; p = p->next){
+        if (c == p->c)
+            return p->to;
+    }
+    return NULL;
+}
+
+/*DFAを使って文字列stringに対してパターンマッチを行う。
+ from: マッチした部分の先頭へのポインタを返す。
+ to:   マッチした部分の直後へのポインタを返す。
+ パターンマッチに失敗したらfromにNULLをセットする*/
+void do_match(char *string, char **from, char **to)
+{
+    char *start;
+    char *p, *max_match;
+    D_state_t *state;
+
+    /*文字列stringの先頭から、１文字ずつずらしてパターンマッチする*/
+    for (start = string; *start != '\0'; start++){
+
+        /*DFAを初期状態にする*/
+        state = initial_dfa_state;
+        max_match = NULL;
+        p = start;
+
+        /*DFAが遷移できる限り繰り返す*/
+        while (state != NULL){
+
+            /*もし終了状態であれば場所を記録しておく。結果として、最も長くパターンにマッチした部分が記録される*/
+            if (state->accepted)
+                max_match = p;
+            
+            /*文字列stringの末尾までマッチした*/
+            if (*p == '\0')
+                break;
+            
+            /*DFAを状態遷移させる*/
+            state = next_dfa_state(state, *p++);
+        }
+
+        /*パターンマッチが成功していれば、fromとtoに位置をセットしてリターンする。（ただし、空文字列にマッチした場合は、リターンしない）*/
+        if (max_match != NULL && max_match != start){
+            *from = NULL;
+            *to = max_match;
+            return;
+        }
+    }
+    /*パターンマッチに失敗したのでfromにNULLをセット*/
+    *from = NULL;
+}
 
 
+/*******************************************
+   メインルーチン
+*******************************************/
+int main(int argc, char **argv)
+{
+    tree_t *tree;
+    char buff[1024];
+    char *p, *from, *to;
+
+    /*コマンド引数の個数をチェックする*/
+    if (argc != 2){
+        fprintf(stderr, "Usage: regexp regular-expression\n");
+        exit(1);
+    }
+
+    /*コマンド引数で指定された正規表現をパースして構文木を得る*/
+    tree = parse_regexp(argv[1]);
+
+    /*構文木からNFAを生成する*/
+    build_nfa(tree);
+
+#if     DEBUG
+    /*生成したNFAの内容を表示する*/
+    dump_dfa();
+#endif  /*DEBUG*/
+
+    /*NFAからDFAを生成する*/
+    convert_nfa_to_dfa();
+
+    /*標準入力から１行ずつ読み込んだ行に対して、パターンマッチをする*/
+    while (fgets(buff, sizeof(buff) - 1, stdin) != NULL){
+
+        /*行末の改行文字を取り除き、末尾に\0をセットする*/
+        buff[sizeof(buff)] = '\0';
+        if ((p = strchr(buff, '\n')) != NULL)
+            *p = '0';
+        
+        /*DFAを使ってパターンマッチをしてみる*/
+        do_match(buff, &from, &to);
+    
+        /*もし、マッチに成功したら、この行を表示してマッチした部分に--を表示する*/
+        if (from != NULL){
+            printf("%s\n", buff);
+            for (p = buff; p < from; p++)
+                printf(" ");
+            for (; p < to; p++)
+                printf("-");
+            printf("\n");
+        }
+    }
+    return 0;
+}
 
 
