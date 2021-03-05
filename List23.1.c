@@ -56,7 +56,7 @@ void init_cache()
     /*キャッシュをリストに連結しておく*/
     cache_list.next = cache_list.prev = &cache_list;
     for (i = 0; i < CACHE_SIZE; i++){
-        cache[i].fp = NULL;     //キャッシュの実体
+        cache[i].fp = NULL;                 //キャッシュの実体
         insert_cache(&cache_list, &cache[i]);
     }
 }
@@ -90,7 +90,7 @@ FILE *open_file(char *filename)
 
             remove_cache(p);
             insert_cache(&cache_list, p);   //リストの先頭の直前（＝リストの末尾）
-            return p->fp;            //ファイルの記述子を返す
+            return p->fp;                   //ファイルの記述子を返す
         }
     }
 
